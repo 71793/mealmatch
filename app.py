@@ -243,7 +243,7 @@ def _render_recipe_card(recipe: dict) -> None:
             if nut and nut.get("calories"):
                 st.markdown("**Nutrition per serving**")
                 n1, n2, n3, n4 = st.columns(4)
-                n1.metric("Calories", f"{int(nut['calories'])} kcal")
+                n1.metric("Calories", f"{int(nut['calories'])}")
                 n2.metric("Protein", f"{int(nut.get('protein', 0))} g")
                 n3.metric("Carbs", f"{int(nut.get('carbs', 0))} g")
                 n4.metric("Fat", f"{int(nut.get('fat', 0))} g")
