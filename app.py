@@ -424,10 +424,26 @@ def _render_recipe_card(recipe: dict) -> None:
             unsafe_allow_html=True,
         )
 
-        # --- Compact metrics row ---
-        c1, c2 = st.columns(2)
-        c1.metric("You have", len(used))
-        c2.metric("Missing", len(missing))
+        # --- Compact ingredient summary pills ---
+        st.markdown(
+            f"""
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <span style="background-color: rgba(0, 138, 5, 0.08);
+                             color: #222; padding: 6px 12px;
+                             border-radius: 999px; font-size: 0.85rem;
+                             font-weight: 500;">
+                    ✓ {len(used)} you have
+                </span>
+                <span style="background-color: rgba(0, 0, 0, 0.04);
+                             color: #222; padding: 6px 12px;
+                             border-radius: 999px; font-size: 0.85rem;
+                             font-weight: 500;">
+                    • {len(missing)} missing
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         if missing:
             # Use detailed text where available so the user sees "2 tbsp soy sauce"
@@ -471,15 +487,46 @@ def _render_recipe_card(recipe: dict) -> None:
                 for name in recipe["ingredients"]:
                     st.markdown(f"• {name}")
 
-            # Nutrition (per serving)
+            # Nutrition (per serving) — compact inline layout to fit narrow cards
             nut = recipe.get("nutrition") or {}
             if nut and nut.get("calories"):
-                st.markdown("**Nutrition per serving**")
-                n1, n2, n3, n4 = st.columns(4)
-                n1.metric("Calories", f"{int(nut['calories'])}")
-                n2.metric("Protein", f"{int(nut.get('protein', 0))} g")
-                n3.metric("Carbs", f"{int(nut.get('carbs', 0))} g")
-                n4.metric("Fat", f"{int(nut.get('fat', 0))} g")
+                st.markdown(
+                    f"""
+                    <div style="margin-top: 16px; margin-bottom: 4px;">
+                        <p style="font-weight: 600; font-size: 0.95rem;
+                                  color: #222; margin-bottom: 8px;">
+                            Nutrition per serving
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <span style="background-color: rgba(255, 56, 92, 0.08);
+                                         color: #222; padding: 6px 12px;
+                                         border-radius: 999px; font-size: 0.85rem;
+                                         font-weight: 500;">
+                                🔥 {int(nut['calories'])} kcal
+                            </span>
+                            <span style="background-color: rgba(0, 138, 5, 0.08);
+                                         color: #222; padding: 6px 12px;
+                                         border-radius: 999px; font-size: 0.85rem;
+                                         font-weight: 500;">
+                                🍗 {int(nut.get('protein', 0))}g protein
+                            </span>
+                            <span style="background-color: rgba(255, 138, 0, 0.08);
+                                         color: #222; padding: 6px 12px;
+                                         border-radius: 999px; font-size: 0.85rem;
+                                         font-weight: 500;">
+                                🍞 {int(nut.get('carbs', 0))}g carbs
+                            </span>
+                            <span style="background-color: rgba(0, 113, 227, 0.08);
+                                         color: #222; padding: 6px 12px;
+                                         border-radius: 999px; font-size: 0.85rem;
+                                         font-weight: 500;">
+                                🧈 {int(nut.get('fat', 0))}g fat
+                            </span>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             if recipe.get("instructions"):
                 st.markdown("**Instructions**")
