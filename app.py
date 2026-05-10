@@ -10,6 +10,7 @@ Architecture:
     ingredients.py   -> ingredient normalization, synonym handling
     api_client.py    -> external API calls (Spoonacular, Unsplash)
     state.py         -> session state helpers (pantry, saved recipes, shopping list)
+    meal_planner.py  -> weekly meal plan state & aggregations
     sample_data.py   -> offline recipe dataset used when no API key is set
 """
 
@@ -24,6 +25,7 @@ from state import init_session_state, get_pantry, add_to_pantry, remove_from_pan
 from state import get_saved_recipes, save_recipe, unsave_recipe
 from state import get_shopping_list, add_to_shopping_list, clear_shopping_list
 from state import get_dietary_filters, set_dietary_filters
+import meal_planner as mp
 
 # ---------------------------------------------------------------------------
 # Page configuration
@@ -36,6 +38,7 @@ st.set_page_config(
 )
 
 init_session_state()
+mp.init_meal_plan()
 
 # Cache the provider so we only build it once per session
 @st.cache_resource
@@ -282,19 +285,157 @@ def page_shopping() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Page: Meal Planner
+# ---------------------------------------------------------------------------
+def page_planner() -> None:
+    st.title("📅 Weekly Meal Planner")
+    st.caption(
+        "Plan your week ahead. Pick from your saved recipes, see total "
+        "nutrition, and auto-generate a shopping list for the whole week."
+    )
+
+    saved = get_saved_recipes()
+    if not saved:
+        st.warning(
+            "📌 You haven't saved any recipes yet. Head to **Discover** to "
+            "find recipes, then click **💾 Save** on the ones you like. "
+            "They'll show up here as options to plan."
+        )
+        return
+
+    plan = mp.get_plan()
+    planned = mp.planned_count()
+
+    # --- Top metrics row ---
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("📋 Meals planned", f"{planned} / 21")
+    pantry_now = get_pantry()
+    missing = mp.week_missing_ingredients(pantry_now)
+    c2.metric("🛒 To buy this week", len(missing))
+    nutr = mp.week_nutrition_summary()
+    if nutr["calories"] is not None:
+        c3.metric("🔥 Total kcal", f"{int(nutr['calories']):,}")
+        c4.metric("🍗 Total protein", f"{int(nutr['protein'])} g")
+    else:
+        c3.metric("🔥 Total kcal", "—")
+        c4.metric("🍗 Total protein", "—")
+
+    st.divider()
+
+    # --- Action buttons ---
+    a1, a2, _ = st.columns([1, 1, 3])
+    if a1.button(
+        "🛒 Add week's missing items to shopping list",
+        use_container_width=True,
+        disabled=not missing,
+    ):
+        for ing in missing:
+            add_to_shopping_list(ing)
+        st.toast(
+            f"Added {len(missing)} items to shopping list",
+            icon="🛒",
+        )
+
+    if a2.button(
+        "🗑️ Clear week",
+        use_container_width=True,
+        type="secondary",
+        disabled=planned == 0,
+    ):
+        mp.clear_week()
+        st.rerun()
+
+    st.divider()
+
+    # --- Build options for the dropdowns ---
+    # We map a label like "Spaghetti Aglio e Olio" -> recipe dict.
+    # The "(empty)" option lets users clear a slot.
+    recipe_options = {"— (empty) —": None}
+    for r in saved:
+        # Use title as visible label; recipe id is implicit via the dict
+        recipe_options[r["title"]] = r
+
+    # --- The weekly grid ---
+    # Each day is a row; each meal is a column inside that row.
+    for day in mp.DAYS:
+        st.markdown(f"### {day}")
+        cols = st.columns(len(mp.MEALS))
+        for col_idx, meal in enumerate(mp.MEALS):
+            with cols[col_idx]:
+                current = plan[day][meal]
+                # Compute default index for the selectbox
+                if current is None:
+                    default_label = "— (empty) —"
+                else:
+                    default_label = current["title"]
+
+                # Selectbox: pick a recipe (or empty)
+                # We use a unique key per day+meal so Streamlit tracks state
+                options_list = list(recipe_options.keys())
+                # If a saved recipe was deleted while in the plan, fall back
+                # gracefully to "(empty)" rather than crashing.
+                if default_label not in options_list:
+                    default_label = "— (empty) —"
+
+                chosen_label = st.selectbox(
+                    label=meal,
+                    options=options_list,
+                    index=options_list.index(default_label),
+                    key=f"plan_{day}_{meal}",
+                )
+                chosen_recipe = recipe_options[chosen_label]
+
+                # Sync back to plan if changed
+                if chosen_recipe != current:
+                    mp.set_slot(day, meal, chosen_recipe)
+
+                # Show small recipe preview if a recipe is in the slot
+                if chosen_recipe:
+                    if chosen_recipe.get("image"):
+                        st.image(
+                            chosen_recipe["image"],
+                            use_container_width=True,
+                        )
+                    st.caption(
+                        f"⏱️ {chosen_recipe.get('ready_in_minutes', 'N/A')} min  "
+                        f"• 🍽️ {chosen_recipe.get('servings', 'N/A')} servings"
+                    )
+        st.divider()
+
+    # --- Missing ingredients summary ---
+    if missing:
+        with st.expander(f"🛒 Missing ingredients for the week ({len(missing)})"):
+            # Group by category using the existing shopping-list logic
+            grouped = build_shopping_list(missing)
+            for category, ings in grouped.items():
+                st.markdown(f"**{category}**")
+                for ing in ings:
+                    st.markdown(f"• {ing}")
+    else:
+        if planned > 0:
+            st.success(
+                "🎉 Your pantry covers everything you've planned! No shopping needed."
+            )
+
+
+# ---------------------------------------------------------------------------
 # Main router
 # ---------------------------------------------------------------------------
 def main() -> None:
     render_sidebar()
 
     # Top-level navigation
-    tab1, tab2, tab3 = st.tabs(["🍳 Discover", "💾 Saved", "🛒 Shopping List"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["🍳 Discover", "💾 Saved", "📅 Planner", "🛒 Shopping List"]
+    )
 
     with tab1:
         page_discover()
     with tab2:
         page_saved()
     with tab3:
+        page_planner()
+    with tab4:
         page_shopping()
 
     # Footer

@@ -128,7 +128,11 @@ class RecipeProvider:
 
         info_resp = requests.get(
             f"{SPOONACULAR_BASE}/recipes/informationBulk",
-            params={"apiKey": self.spoonacular_key, "ids": ids},
+            params={
+                "apiKey": self.spoonacular_key,
+                "ids": ids,
+                "includeNutrition": "true",
+            },
             timeout=10,
         )
         info_resp.raise_for_status()
@@ -205,6 +209,28 @@ def _matches_diets(recipe_info: dict, requested_diets: list[str]) -> bool:
     return all(diet_flags.get(d, False) for d in requested_diets)
 
 
+def _extract_nutrition(info: dict) -> dict:
+    """
+    Pull calories/protein/carbs/fat per serving out of Spoonacular's nutrition
+    structure. Returns an empty dict if the data isn't there so the planner
+    knows to skip this recipe in totals.
+    """
+    nutrition = info.get("nutrition", {})
+    nutrients = nutrition.get("nutrients", []) if nutrition else []
+    if not nutrients:
+        return {}
+
+    # Build a quick lookup by nutrient name
+    lookup = {n.get("name", "").lower(): n.get("amount", 0) for n in nutrients}
+
+    return {
+        "calories": lookup.get("calories", 0),
+        "protein": lookup.get("protein", 0),
+        "carbs": lookup.get("carbohydrates", 0),
+        "fat": lookup.get("fat", 0),
+    }
+
+
 def _normalize_spoonacular_recipe(info: dict) -> dict:
     """Convert Spoonacular's response shape to our internal format."""
     ingredients = []
@@ -234,4 +260,5 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
         "servings": info.get("servings", 0),
         "instructions": instructions_text,
         "diets": info.get("diets", []),
+        "nutrition": _extract_nutrition(info),
     }
