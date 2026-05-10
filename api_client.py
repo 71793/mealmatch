@@ -233,12 +233,29 @@ def _extract_nutrition(info: dict) -> dict:
 
 def _normalize_spoonacular_recipe(info: dict) -> dict:
     """Convert Spoonacular's response shape to our internal format."""
-    ingredients = []
+    # Simple list of normalized names — used by the matching engine.
+    # We keep this exactly as before so nothing in the ranking logic breaks.
+    ingredients: list[str] = []
+
+    # Detailed view — amount, unit, full text — used by the UI for display.
+    # We keep both in parallel; index N in one corresponds to index N in the other.
+    ingredients_detailed: list[dict] = []
+
     for ing in info.get("extendedIngredients", []):
-        # Use 'name' rather than 'original' for cleaner matching
         name = ing.get("name") or ing.get("originalName") or ""
-        if name:
-            ingredients.append(name)
+        if not name:
+            continue
+
+        ingredients.append(name)
+        ingredients_detailed.append(
+            {
+                "name": name,
+                "amount": ing.get("amount", 0),
+                "unit": ing.get("unit", "") or "",
+                # 'original' is the human-readable form: "2 large tomatoes, diced"
+                "original": ing.get("original") or ing.get("originalString") or name,
+            }
+        )
 
     # Instructions: prefer the analyzedInstructions structure for clean steps
     instructions_text = ""
@@ -256,6 +273,7 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
         "title": info["title"],
         "image": info.get("image", ""),
         "ingredients": ingredients,
+        "ingredients_detailed": ingredients_detailed,
         "ready_in_minutes": info.get("readyInMinutes", 0),
         "servings": info.get("servings", 0),
         "instructions": instructions_text,

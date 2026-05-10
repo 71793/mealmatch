@@ -154,6 +154,24 @@ def page_discover() -> None:
                 _render_recipe_card(recipe)
 
 
+def _build_detailed_lookup(recipe: dict) -> dict[str, str]:
+    """
+    Build a dict mapping `ingredients[i]` → its detailed text from
+    `ingredients_detailed[i]`. Used to show e.g. "2 tbsp soy sauce"
+    in the missing list instead of just "soy sauce".
+    """
+    detailed = recipe.get("ingredients_detailed", [])
+    simple = recipe.get("ingredients", [])
+    lookup: dict[str, str] = {}
+    for i, name in enumerate(simple):
+        if i < len(detailed):
+            original = detailed[i].get("original") or name
+            lookup[name] = original
+        else:
+            lookup[name] = name
+    return lookup
+
+
 def _render_recipe_card(recipe: dict) -> None:
     """Display a single recipe as a card."""
     with st.container(border=True):
@@ -179,9 +197,13 @@ def _render_recipe_card(recipe: dict) -> None:
         c2.metric("Missing", len(missing))
 
         if missing:
+            # Use detailed text where available so the user sees "2 tbsp soy sauce"
+            # instead of just "soy sauce" in the missing list.
+            detailed_lookup = _build_detailed_lookup(recipe)
             with st.expander(f"🛒 Missing: {len(missing)} items"):
                 for ing in missing:
-                    st.markdown(f"• {ing}")
+                    display = detailed_lookup.get(ing, ing)
+                    st.markdown(f"• {display}")
 
         # --- Action buttons ---
         b1, b2 = st.columns(2)
@@ -203,6 +225,28 @@ def _render_recipe_card(recipe: dict) -> None:
         with st.expander("📖 View recipe"):
             st.markdown(f"**Ready in:** {recipe.get('ready_in_minutes', 'N/A')} min")
             st.markdown(f"**Servings:** {recipe.get('servings', 'N/A')}")
+
+            # Show full ingredient list with amounts
+            detailed = recipe.get("ingredients_detailed", [])
+            if detailed:
+                st.markdown("**Ingredients**")
+                for d in detailed:
+                    st.markdown(f"• {d.get('original') or d.get('name', '')}")
+            elif recipe.get("ingredients"):
+                # Fallback: older saved recipes might only have the simple list
+                st.markdown("**Ingredients**")
+                for name in recipe["ingredients"]:
+                    st.markdown(f"• {name}")
+
+            # Nutrition (per serving)
+            nut = recipe.get("nutrition") or {}
+            if nut and nut.get("calories"):
+                st.markdown("**Nutrition per serving**")
+                n1, n2, n3, n4 = st.columns(4)
+                n1.metric("Calories", f"{int(nut['calories'])} kcal")
+                n2.metric("Protein", f"{int(nut.get('protein', 0))} g")
+                n3.metric("Carbs", f"{int(nut.get('carbs', 0))} g")
+                n4.metric("Fat", f"{int(nut.get('fat', 0))} g")
 
             if recipe.get("instructions"):
                 st.markdown("**Instructions**")
@@ -237,6 +281,24 @@ def page_saved() -> None:
                         f"⏱️ {recipe.get('ready_in_minutes', 'N/A')} min  •  "
                         f"🍽️ {recipe.get('servings', 'N/A')} servings"
                     )
+
+                    # Show ingredients with quantities
+                    detailed = recipe.get("ingredients_detailed", [])
+                    if detailed:
+                        with st.expander(f"📋 Ingredients ({len(detailed)})"):
+                            for d in detailed:
+                                st.markdown(
+                                    f"• {d.get('original') or d.get('name', '')}"
+                                )
+
+                    # Nutrition summary
+                    nut = recipe.get("nutrition") or {}
+                    if nut and nut.get("calories"):
+                        st.caption(
+                            f"🔥 {int(nut['calories'])} kcal  •  "
+                            f"🍗 {int(nut.get('protein', 0))}g protein"
+                        )
+
                     if st.button(
                         "🗑️ Remove",
                         key=f"unsave_{recipe['id']}",

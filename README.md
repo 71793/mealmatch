@@ -13,6 +13,7 @@ mealmatch/
 ├── ingredients.py     # Ingredient normalization (synonyms, modifiers)
 ├── api_client.py      # Spoonacular & Unsplash API client
 ├── state.py           # Session state wrapper
+├── meal_planner.py    # Weekly meal-plan state + aggregations
 ├── sample_data.py     # Local recipe dataset (offline mode)
 └── requirements.txt
 ```
