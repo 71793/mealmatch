@@ -727,9 +727,12 @@ def page_planner() -> None:
                 )
                 chosen_recipe = recipe_options[chosen_label]
 
-                # Sync back to plan if changed
+                # Sync back to plan and immediately re-render the page
+                # so top-of-page metrics (calories, missing items, etc.)
+                # reflect the new selection right away — not on the next click.
                 if chosen_recipe != current:
                     mp.set_slot(day, meal, chosen_recipe)
+                    st.rerun()
 
                 # Show small recipe preview if a recipe is in the slot
                 if chosen_recipe:
