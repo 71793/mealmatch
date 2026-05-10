@@ -37,6 +37,160 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ---------------------------------------------------------------------------
+# Airbnb-inspired theme
+# ---------------------------------------------------------------------------
+# Custom CSS to give the app a polished, modern look:
+#   - Rounded image corners, subtle card shadows
+#   - Coral/pink accent color (#FF385C, Airbnb's signature)
+#   - Generous spacing and clean typography
+#   - Hover effects on interactive elements
+st.markdown(
+    """
+    <style>
+    /* --- Typography --- */
+    html, body, [class*="css"] {
+        font-family: 'Circular', -apple-system, BlinkMacSystemFont,
+                     'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+    h1 {
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
+    }
+    h2, h3 {
+        font-weight: 600 !important;
+        letter-spacing: -0.01em;
+    }
+
+    /* --- Rounded images (Airbnb's hallmark) --- */
+    .stImage > img {
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .stImage > img:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    /* --- Cards: lift bordered containers with shadow and rounding --- */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 16px !important;
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 16px !important;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.10);
+        transform: translateY(-4px);
+    }
+
+    /* --- Buttons: Airbnb-style coral with rounded corners --- */
+    .stButton > button {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 1.2rem !important;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    .stButton > button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    /* Primary buttons in the Airbnb coral */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #FF385C 0%, #E61E4D 100%) !important;
+        color: white !important;
+        border: none !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #E61E4D 0%, #C2185B 100%) !important;
+    }
+
+    /* --- Tabs: bigger, bolder, with coral underline on active --- */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 32px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        padding: 12px 4px !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #FF385C !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #FF385C !important;
+        height: 3px !important;
+    }
+
+    /* --- Metric cards: subtle background --- */
+    [data-testid="stMetric"] {
+        background-color: rgba(255, 56, 92, 0.04);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid rgba(255, 56, 92, 0.08);
+    }
+    [data-testid="stMetricLabel"] {
+        font-weight: 600 !important;
+        color: rgba(0, 0, 0, 0.6);
+    }
+    [data-testid="stMetricValue"] {
+        font-weight: 700 !important;
+        color: #222 !important;
+    }
+
+    /* --- Expanders: cleaner, rounded --- */
+    .streamlit-expanderHeader {
+        border-radius: 12px !important;
+        font-weight: 500 !important;
+    }
+
+    /* --- Sidebar: a little more breathing room --- */
+    [data-testid="stSidebar"] {
+        padding-top: 1.5rem;
+    }
+    [data-testid="stSidebar"] .stButton > button {
+        font-size: 0.9rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+
+    /* --- Success/Info/Warning alerts: softer, more rounded --- */
+    .stAlert {
+        border-radius: 12px !important;
+        border: none !important;
+    }
+
+    /* --- Select boxes & inputs: smoother --- */
+    .stSelectbox > div > div, .stTextInput > div > div > input {
+        border-radius: 8px !important;
+    }
+
+    /* --- Reduce default top padding for more content above the fold --- */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1280px !important;
+    }
+
+    /* --- Recipe title within cards: tighter spacing --- */
+    div[data-testid="stVerticalBlockBorderWrapper"] h3 {
+        margin-top: 12px !important;
+        margin-bottom: 4px !important;
+        font-size: 1.15rem !important;
+    }
+
+    /* --- Captions: softer color --- */
+    .caption, [data-testid="stCaptionContainer"] {
+        color: rgba(0, 0, 0, 0.5);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 init_session_state()
 mp.init_meal_plan()
 
@@ -52,8 +206,21 @@ provider = get_provider()
 # Sidebar — pantry management + dietary filters
 # ---------------------------------------------------------------------------
 def render_sidebar() -> None:
-    st.sidebar.title("🥦 Your Pantry")
-    st.sidebar.caption("Add what you have at home. We'll match recipes to it.")
+    st.sidebar.markdown(
+        """
+        <div style="margin-bottom: 16px;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin: 0;
+                       color: #222; letter-spacing: -0.01em;">
+                🥦 Your Pantry
+            </h2>
+            <p style="color: rgba(0,0,0,0.55); font-size: 0.85rem;
+                      margin: 4px 0 0 0;">
+                Add what you have — we'll match recipes to it.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # --- Add ingredient ---
     with st.sidebar.form("add_ingredient_form", clear_on_submit=True):
@@ -113,22 +280,53 @@ def render_sidebar() -> None:
 # Page: Discover recipes
 # ---------------------------------------------------------------------------
 def page_discover() -> None:
-    st.title("🍳 Discover Recipes")
-    st.caption(
-        "Recipes ranked by how well they match what you already have. "
-        "The fewer missing ingredients, the higher the rank."
+    # Airbnb-style hero header
+    st.markdown(
+        """
+        <div style="margin-bottom: 24px;">
+            <h1 style="font-size: 2.5rem; font-weight: 700; letter-spacing: -0.03em;
+                       margin-bottom: 8px; color: #222;">
+                What's in your kitchen tonight?
+            </h1>
+            <p style="font-size: 1.1rem; color: rgba(0,0,0,0.6); margin-top: 0;">
+                Pick ingredients from your pantry — we'll find the perfect recipes.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     pantry = get_pantry()
     diets = get_dietary_filters()
 
     if not pantry:
-        st.warning("👈 Add some ingredients to your pantry first.")
-        st.image(
-            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800",
-            caption="Let's get cooking!",
-            use_container_width=True,
-        )
+        c1, c2 = st.columns([2, 3])
+        with c1:
+            st.markdown(
+                """
+                <div style="padding: 32px 0;">
+                    <h2 style="font-size: 1.8rem; font-weight: 600;
+                               color: #222; line-height: 1.2;">
+                        Let's get cooking 🍳
+                    </h2>
+                    <p style="color: rgba(0,0,0,0.6); font-size: 1.05rem;
+                              margin-top: 12px;">
+                        Add some ingredients from your pantry on the left,
+                        and we'll suggest recipes that match.
+                    </p>
+                    <p style="color: rgba(0,0,0,0.45); font-size: 0.95rem;
+                              margin-top: 16px;">
+                        💡 Try the quick-add staples in the sidebar to get started.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c2:
+            st.image(
+                "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800",
+                use_container_width=True,
+            )
         return
 
     # Fetch recipes (uses API if key configured, else local sample data)
@@ -143,12 +341,20 @@ def page_discover() -> None:
 
     ranked = rank_recipes(recipes, pantry=pantry)
 
-    st.success(f"Found **{len(ranked)}** matching recipes ✨")
+    # Friendly results header
+    st.markdown(
+        f"""
+        <p style="font-size: 1.05rem; color: rgba(0,0,0,0.7); margin-bottom: 24px;">
+            Found <strong>{len(ranked)}</strong> recipes that match your pantry ✨
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # --- Display recipes as cards ---
     cols_per_row = 3
     for row_start in range(0, len(ranked), cols_per_row):
-        cols = st.columns(cols_per_row)
+        cols = st.columns(cols_per_row, gap="large")
         for i, recipe in enumerate(ranked[row_start : row_start + cols_per_row]):
             with cols[i]:
                 _render_recipe_card(recipe)
@@ -178,20 +384,47 @@ def _render_recipe_card(recipe: dict) -> None:
         if recipe.get("image"):
             st.image(recipe["image"], use_container_width=True)
 
-        st.markdown(f"### {recipe['title']}")
-
-        # --- match metrics ---
+        # --- Compute match data first so we can use it in the title row ---
         match_pct = int(recipe["match_score"] * 100)
         used = recipe["used_ingredients"]
         missing = recipe["missing_ingredients"]
 
+        # Pick a color for the match badge
         if match_pct >= 80:
-            st.success(f"🎯 **{match_pct}% match** — you have almost everything!")
+            badge_color = "#008A05"  # green
+            badge_label = "Great match"
         elif match_pct >= 50:
-            st.info(f"👍 **{match_pct}% match** — a few items missing")
+            badge_color = "#FF385C"  # Airbnb coral
+            badge_label = "Good match"
         else:
-            st.warning(f"📝 **{match_pct}% match** — bigger shopping list")
+            badge_color = "#717171"  # neutral gray
+            badge_label = "Some missing"
 
+        # --- Title + match badge in clean Airbnb style ---
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: space-between;
+                        align-items: flex-start; gap: 8px; margin-top: 12px;">
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;
+                           color: #222; line-height: 1.3; flex: 1;">
+                    {recipe['title']}
+                </h3>
+                <span style="background-color: {badge_color}; color: white;
+                             padding: 4px 10px; border-radius: 999px;
+                             font-size: 0.8rem; font-weight: 600;
+                             white-space: nowrap;">
+                    {match_pct}%
+                </span>
+            </div>
+            <p style="color: rgba(0,0,0,0.55); font-size: 0.85rem;
+                      margin: 4px 0 12px 0;">
+                ⏱️ {recipe.get('ready_in_minutes', 'N/A')} min  ·  🍽️ {recipe.get('servings', 'N/A')} servings  ·  {badge_label}
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # --- Compact metrics row ---
         c1, c2 = st.columns(2)
         c1.metric("You have", len(used))
         c2.metric("Missing", len(missing))
@@ -501,10 +734,21 @@ def main() -> None:
         page_shopping()
 
     # Footer
-    st.markdown("---")
-    st.caption(
-        "**MealMatch** — Cook with what you have. Powered by Streamlit. "
-        "Set `SPOONACULAR_API_KEY` in your environment to use live recipe data."
+    st.markdown(
+        """
+        <div style="margin-top: 48px; padding-top: 24px;
+                    border-top: 1px solid rgba(0,0,0,0.08);
+                    text-align: center; color: rgba(0,0,0,0.5);
+                    font-size: 0.85rem;">
+            <p style="margin: 0; font-weight: 600; color: rgba(0,0,0,0.7);">
+                🍳 MealMatch
+            </p>
+            <p style="margin: 4px 0 0 0;">
+                Cook with what you have · Reduce food waste, eat better
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 
