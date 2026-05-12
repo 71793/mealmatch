@@ -233,12 +233,7 @@ def _extract_nutrition(info: dict) -> dict:
 
 def _normalize_spoonacular_recipe(info: dict) -> dict:
     """Convert Spoonacular's response shape to our internal format."""
-    # Simple list of normalized names — used by the matching engine.
-    # We keep this exactly as before so nothing in the ranking logic breaks.
     ingredients: list[str] = []
-
-    # Detailed view — amount, unit, full text — used by the UI for display.
-    # We keep both in parallel; index N in one corresponds to index N in the other.
     ingredients_detailed: list[dict] = []
 
     for ing in info.get("extendedIngredients", []):
@@ -252,12 +247,10 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
                 "name": name,
                 "amount": ing.get("amount", 0),
                 "unit": ing.get("unit", "") or "",
-                # 'original' is the human-readable form: "2 large tomatoes, diced"
                 "original": ing.get("original") or ing.get("originalString") or name,
             }
         )
 
-    # Instructions: prefer the analyzedInstructions structure for clean steps
     instructions_text = ""
     analyzed = info.get("analyzedInstructions", [])
     if analyzed and analyzed[0].get("steps"):
@@ -280,10 +273,17 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
         "diets": info.get("diets", []),
         "nutrition": _extract_nutrition(info),
     }
-import os
+
+
+# ---------------------------------------------------------------------------
+# Fridge scan — KI-Analyse
+# ---------------------------------------------------------------------------
 import base64
 import anthropic
+
+
 def analyze_fridge_image(image_bytes: bytes) -> list:
+    """Sendet ein Kühlschrank-Foto an Claude und gibt eine Zutatenliste zurück."""
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
     message = client.messages.create(
@@ -302,7 +302,7 @@ def analyze_fridge_image(image_bytes: bytes) -> list:
                 },
                 {
                     "type": "text",
-                    "text": "Analysiere dieses Kühlschrank-Foto. Liste alle sichtbaren Lebensmittel auf. Antworte NUR mit einer kommagetrennten Liste, z.B.: Milch, Eier, Käse, Tomaten"
+                    "text": "Analysiere dieses Kühlschrank-Foto. Liste alle sichtbaren Lebensmittel auf. Antworte NUR mit einer kommagetrennten Liste, z.B.: Milch, Eier, Käse, Tomaten",
                 }
             ],
         }],
