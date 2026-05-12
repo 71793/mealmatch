@@ -284,7 +284,7 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
 import anthropic
 
 def analyze_fridge_image(image_bytes: bytes) -> list:
-    client = anthropic.Anthropic(api_key="DEIN_API_KEY_HIER")
+    client = anthropic.Anthropic(api_key="ANTHROPIC_API_KEY")
     image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
     message = client.messages.create(
         model="claude-opus-4-5",
