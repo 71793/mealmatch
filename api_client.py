@@ -280,3 +280,33 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
         "diets": info.get("diets", []),
         "nutrition": _extract_nutrition(info),
     }
+    import base64
+import anthropic
+
+def analyze_fridge_image(image_bytes: bytes) -> list:
+    client = anthropic.Anthropic(api_key="DEIN_API_KEY_HIER")
+    image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
+    message = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": "Analysiere dieses Kühlschrank-Foto. Liste alle sichtbaren Lebensmittel auf. Antworte NUR mit einer kommagetrennten Liste, z.B.: Milch, Eier, Käse, Tomaten"
+                }
+            ],
+        }],
+    )
+    result = message.content[0].text
+    return [item.strip() for item in result.split(",")]
+    
