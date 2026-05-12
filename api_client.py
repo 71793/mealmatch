@@ -280,10 +280,9 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
         "diets": info.get("diets", []),
         "nutrition": _extract_nutrition(info),
     }
-    import os
+   import os
 import base64
 import anthropic
-
 def analyze_fridge_image(image_bytes: bytes) -> list:
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
