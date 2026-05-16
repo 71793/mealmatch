@@ -301,30 +301,34 @@ def page_fridge_scan() -> None:
     st.markdown("""
         <div style="margin-bottom: 24px;">
             <h1 style="font-size: 2.5rem; font-weight: 700; color: #222;">📷 Fridge Scan</h1>
-            <p style="font-size: 1.1rem; color: rgba(0,0,0,0.6);">Foto vom Kühlschrank hochladen — KI erkennt automatisch was drin ist.</p>
+            <p style="font-size: 1.1rem; color: rgba(0,0,0,0.6);">Upload a photo of your fridge — AI will detect what's inside.</p>
         </div>
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Kühlschrank-Foto hochladen", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader("Upload fridge photo", type=["jpg", "jpeg", "png"])
 
     if uploaded_file:
-        st.image(uploaded_file, caption="Dein Kühlschrank", use_container_width=True)
-        if st.button("🔍 KI-Analyse starten", type="primary"):
-            with st.spinner("KI analysiert deinen Kühlschrank..."):
+        st.image(uploaded_file, caption="Your fridge", use_container_width=True)
+
+        if st.button("🔍 Start AI Analysis", type="primary"):
+            with st.spinner("AI is analyzing your fridge..."):
                 image_bytes = uploaded_file.read()
                 ingredients = analyze_fridge_image(image_bytes)
-            st.success(f"✅ {len(ingredients)} Zutaten gefunden!")
+            st.session_state["fridge_ingredients"] = ingredients
+
+        if "fridge_ingredients" in st.session_state:
+            ingredients = st.session_state["fridge_ingredients"]
+            st.success(f"✅ {len(ingredients)} ingredients found!")
             cols = st.columns(3)
             for i, item in enumerate(ingredients):
                 cols[i % 3].markdown(f"• {item}")
             st.divider()
-            if st.button("➕ Alle zum Pantry hinzufügen", type="primary"):
+            if st.button("➕ Add all to Pantry", type="primary"):
                 for item in ingredients:
-                    add_to_pantry(normalize_ingredient(item))
-                st.success("Alle Zutaten hinzugefügt!")
+                    add_to_pantry(item.lower().strip())
+                del st.session_state["fridge_ingredients"]
+                st.success("✅ All ingredients added to pantry!")
                 st.rerun()
-
-
 def main() -> None:
     render_sidebar()
 
