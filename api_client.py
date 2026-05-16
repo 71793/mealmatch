@@ -281,9 +281,17 @@ def _normalize_spoonacular_recipe(info: dict) -> dict:
 import base64
 import anthropic
 
-
 def analyze_fridge_image(image_bytes: bytes) -> list:
-    """Sendet ein Kühlschrank-Foto an Claude und gibt eine Zutatenliste zurück."""
+    """Sends a fridge photo to Claude and returns a list of ingredients."""
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(image_bytes))
+    img.thumbnail((1024, 1024))
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG")
+    image_bytes = buffer.getvalue()
+
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
     message = client.messages.create(
@@ -302,7 +310,7 @@ def analyze_fridge_image(image_bytes: bytes) -> list:
                 },
                 {
                     "type": "text",
-                    "text": "Analysiere dieses Kühlschrank-Foto. Liste alle sichtbaren Lebensmittel auf. Antworte NUR mit einer kommagetrennten Liste, z.B.: Milch, Eier, Käse, Tomaten",
+                    "text": "Analyze this fridge photo. List all visible food items in English. Reply ONLY with a comma-separated list in English, e.g.: milk, eggs, cheese, tomatoes",
                 }
             ],
         }],
